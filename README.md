@@ -5,8 +5,6 @@ Secure Remote Password is a authentication protocol to prove your identity to
 another party, using a password, but without ever revealing that password to
 other parties. Not even the party you are proving your identity. See [Secure Remote Password protocol][5] for more information on this protocol.
 
-![CI status](https://github.com/Bouke/SRP/workflows/Test/badge.svg)
-
 ## Example usage
 
 ```swift
@@ -63,14 +61,8 @@ low failure rates due to the randomness this protocol includes.
 
 * Python: ❌ [srp][2] is not compatible; it doesn't correctly calculate `k`.
 * Python: ✅ [srptools][3] is compatible.
-
-## Development
-
-### Testing
-
-This project includes unit tests. A few compiler flags are required to run the tests swiftly:
-
-    swift test -c release -Xswiftc -enable-testing
+* Nimbus: ✅ [nimbus][7] is compatible.
+* Thinbus: ✅ [thinbus][8] is compatible.
 
 ## References
 
@@ -79,7 +71,7 @@ This project includes unit tests. A few compiler flags are required to run the t
 
 ## Credits
 
-This library was written by [Bouke Haarsma][4].
+This library was written originally by [Bouke Haarsma][4] and improved by [Karim Karimov][6].
 
 [0]: https://tools.ietf.org/html/rfc2945
 [1]: https://tools.ietf.org/html/rfc5054
@@ -87,3 +79,6 @@ This library was written by [Bouke Haarsma][4].
 [3]: https://pypi.python.org/pypi/srptools
 [4]: https://twitter.com/BoukeHaarsma
 [5]: https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol
+[6]: https://github.com/kerimovscreations
+[7]: https://connect2id.com/products/nimbus-srp
+[8]: https://github.com/simbo1905/thinbus-srp-npm

@@ -1,3 +1,7 @@
+## 3.2.0 - 2021-02-25
+### Changes
+- Implemented Nimbus and Thinbus client compatibility
+
 ## 3.1.0 - 2018-10-20
 ### Changes
 - Upgrade BlueCryptor to 1.x for Xcode 10 compatibility

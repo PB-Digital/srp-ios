@@ -36,7 +36,7 @@ public class Client {
         if let privateKey = privateKey {
             a = BigUInt(privateKey)
         } else {
-            a = BigUInt(Data(bytes: try! Random.generate(byteCount: 128)))
+            a = BigUInt(Data(try! Random.generate(byteCount: max(32, group.getNSize()))))
         }
         // A = g^a % N
         A = group.g.power(a, modulus: group.N)
@@ -112,7 +112,7 @@ public class Client {
     /// - Returns: key proof (M)
     /// - Throws: `AuthenticationFailure.invalidPublicKey` if the server's 
     ///     public key is invalid (i.e. B % N is zero).
-    public func processChallenge(salt: Data, publicKey serverPublicKey: Data) throws -> Data {
+    public func processChallenge(clientType: ClientType, salt: Data, publicKey serverPublicKey: Data) throws -> Data {
         let H = Digest.hasher(algorithm)
         let N = group.N
 
@@ -121,15 +121,29 @@ public class Client {
         guard B % N != 0 else {
             throw AuthenticationFailure.invalidPublicKey
         }
-
-        let u = calculate_u(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey)
+        
         let k = calculate_k(group: group, algorithm: algorithm)
-        let x = self.precomputedX ?? calculate_x(algorithm: algorithm, salt: salt, username: username, password: password!)
-        let v = calculate_v(group: group, x: x)
 
+        let u: BigUInt
+        let x: BigUInt
+
+        switch clientType {
+        case .nimbus:
+            u = calculate_u(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey)
+            x = self.precomputedX ?? calculate_x_nimbus(algorithm: algorithm, salt: salt, password: password!)
+        case .thinbus:
+            u = calculate_u_thinbus(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey)
+            x = self.precomputedX ?? calculate_x_thinbus(group: group, algorithm: algorithm, salt: salt, username: username, password: password!)
+        case .srptools:
+            u = calculate_u(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey)
+            x = self.precomputedX ?? calculate_x(algorithm: algorithm, salt: salt, username: username, password: password!)
+        }
+        
+        let v = calculate_v(group: group, x: x)
+        
         // shared secret
         // S = (B - kg^x) ^ (a + ux)
-        // Note that v = g^x, and that B - kg^x might become negative, which 
+        // Note that v = g^x, and that B - kg^x might become negative, which
         // cannot be stored in BigUInt. So we'll add N to B_ and make sure kv
         // isn't greater than N.
         let S = (B + N - k * v % N).power(a + u * x, modulus: N)
@@ -138,7 +152,16 @@ public class Client {
         K = H(S.serialize())
 
         // client verification
-        let M = calculate_M(group: group, algorithm: algorithm, username: username, salt: salt, A: publicKey, B: serverPublicKey, K: K!)
+        let M: Data
+        
+        switch clientType {
+        case .nimbus:
+            M = calculate_M_nimbus(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey, S: S.serialize())
+        case .thinbus:
+            M = calculate_M_thinbus(group: group, algorithm: algorithm, A: publicKey, B: serverPublicKey, S: S.serialize())
+        case .srptools:
+            M = calculate_M(group: group, algorithm: algorithm, username: username, salt: salt, A: publicKey, B: serverPublicKey, K: K!)
+        }
 
         // server verification
         HAMK = calculate_HAMK(algorithm: algorithm, A: publicKey, M: M, K: K!)

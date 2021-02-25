@@ -26,8 +26,8 @@ public func createSaltedVerificationKey(
     algorithm: Digest.Algorithm = .sha1)
     -> (salt: Data, verificationKey: Data)
 {
-    let salt = salt ?? Data(bytes: try! Random.generate(byteCount: 16))
-    let x = calculate_x(algorithm: algorithm, salt: salt, username: username, password: password)
+    let salt = salt ?? Data(try! Random.generate(byteCount: 16))
+    let x = calculate_x_thinbus(group: group, algorithm: algorithm, salt: salt, username: username, password: password)
     return createSaltedVerificationKey(from: x, salt: salt, group: group)
 }
 
@@ -60,7 +60,7 @@ func createSaltedVerificationKey(
     group: Group = .N2048)
     -> (salt: Data, verificationKey: Data)
 {
-    let salt = salt ?? Data(bytes: try! Random.generate(byteCount: 16))
+    let salt = salt ?? Data(try! Random.generate(byteCount: 16))
     let v = calculate_v(group: group, x: x)
     return (salt, v.serialize())
 }
@@ -77,12 +77,35 @@ func calculate_u(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) ->
     return BigUInt(H(pad(A, to: size) + pad(B, to: size)))
 }
 
+//u = H(A | B)
+func calculate_u_thinbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) -> BigUInt {
+    let H = Digest.hasher(algorithm)
+    let Adata = A.hexadecimalString.data(using: .utf8)!
+    let Bdata = B.hexadecimalString.data(using: .utf8)!
+    return BigUInt(H(Adata + Bdata))
+}
+
 //M1 = H(H(N) XOR H(g) | H(I) | s | A | B | K)
 func calculate_M(group: Group, algorithm: Digest.Algorithm, username: String, salt: Data, A: Data, B: Data, K: Data) -> Data {
     let H = Digest.hasher(algorithm)
     let HN_xor_Hg = (H(group.N.serialize()) ^ H(group.g.serialize()))!
     let HI = H(username.data(using: .utf8)!)
     return H(HN_xor_Hg + HI + salt + A + B + K)
+}
+
+//M1 = H(A | B | S)
+func calculate_M_nimbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data, S: Data) -> Data {
+    let H = Digest.hasher(algorithm)
+    return H(A + B + S)
+}
+
+//M1 = H(A | B | S)
+func calculate_M_thinbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data, S: Data) -> Data {
+    let H = Digest.hasher(algorithm)
+    let Adata = A.hexadecimalString.data(using: .utf8)!
+    let Bdata = B.hexadecimalString.data(using: .utf8)!
+    let Sdata = S.hexadecimalString.data(using: .utf8)!
+    return H(Adata + Bdata + Sdata)
 }
 
 //HAMK = H(A | M | K)
@@ -102,6 +125,33 @@ func calculate_k(group: Group, algorithm: Digest.Algorithm) -> BigUInt {
 func calculate_x(algorithm: Digest.Algorithm, salt: Data, username: String, password: String) -> BigUInt {
     let H = Digest.hasher(algorithm)
     return BigUInt(H(salt + H("\(username):\(password)".data(using: .utf8)!)))
+}
+
+//x = H(s | H(I | ":" | P))
+func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: Data, username: String, password: String) -> BigUInt {
+    let H = Digest.hasher(algorithm)
+    
+    var hash1 = H("\(username):\(password)".data(using: .utf8)!)
+    
+    if hash1[0] == 0 {
+        hash1.remove(at: 0)
+    }
+    
+    let hash1S = hash1.hexadecimalString
+    
+    var hash = H("\(salt.hexadecimalString)\(hash1S)".uppercased().data(using: .utf8)!)
+    
+    if hash[0] == 0 {
+        hash.remove(at: 0)
+    }
+    
+    return BigUInt(hash) % group.N
+}
+
+//x = H(s | H(P))
+func calculate_x_nimbus(algorithm: Digest.Algorithm, salt: Data, password: String) -> BigUInt {
+    let H = Digest.hasher(algorithm)
+    return BigUInt(H(salt + H(password.data(using: .utf8)!)))
 }
 
 // v = g^x % N

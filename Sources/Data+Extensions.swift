@@ -15,3 +15,21 @@ func + (lhs: Data, rhs: Data) -> Data {
     result.append(rhs)
     return result
 }
+
+extension Data {
+    public var hexadecimalString : String {
+        var str = ""
+        enumerateBytes { buffer, index, stop in
+            for byte in buffer {
+                str.append(String(format:"%02x",byte))
+            }
+        }
+        return str
+    }
+}
+
+extension NSData {
+    public var hexadecimalString : String {
+        return (self as Data).hexadecimalString
+    }
+}

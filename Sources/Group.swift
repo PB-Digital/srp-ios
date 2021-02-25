@@ -26,6 +26,9 @@ import BigInt
 ///        Network and Distributed Systems Security, San Diego, CA,
 ///        pp. 97-111.
 public enum Group {
+    /// 256-bits group
+    case N256
+    
     /// 1024-bits group
     case N1024
 
@@ -71,6 +74,10 @@ public enum Group {
 
     var N: BigUInt {
         switch self {
+        case .N256:
+            return BigUInt(
+                "115B8B692E0E045692CF280B436735C77A5A9E8A9E7ED56C965F87DB5B2A2ECE3",
+                radix: 16)!
         case .N1024:
             return BigUInt(
                 "EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C" +
@@ -216,9 +223,15 @@ public enum Group {
             return custom.N
         }
     }
+    
+    public func getNSize() -> Int {
+        return N.serialize().count
+    }
 
     var g: BigUInt {
         switch self {
+        case .N256:
+            return BigUInt(2)
         case .N1024:
             return BigUInt(2)
         case .N1536:
