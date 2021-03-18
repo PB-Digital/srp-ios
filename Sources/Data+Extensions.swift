@@ -1,5 +1,4 @@
 import Foundation
-import BigNumber
 
 func ^ (lhs: Data, rhs: Data) -> Data? {
     guard lhs.count == rhs.count else { return nil }
