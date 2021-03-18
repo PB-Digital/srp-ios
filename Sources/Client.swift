@@ -1,6 +1,5 @@
 import Foundation
 import Cryptor
-import BigNumber
 
 /// SRP Client; the party that initializes the authentication and
 /// must proof possession of the correct password.

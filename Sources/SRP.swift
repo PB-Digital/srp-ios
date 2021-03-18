@@ -1,6 +1,5 @@
 import Foundation
 import Cryptor
-import BigNumber
 
 /// Creates the salted verification key based on a user's username and
 /// password. Only the salt and verification key need to be stored on the

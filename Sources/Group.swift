@@ -1,5 +1,3 @@
-import BigNumber
-
 /// SRP Group Parameters
 ///
 /// The 1024-, 1536-, and 2048-bit groups are taken from software
