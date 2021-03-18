@@ -1,3 +1,7 @@
+## 3.2.1 - 2021-03-18
+### Changes
+- Fixed stability issues Nimbus and Thinbus client implementation
+
 ## 3.2.0 - 2021-02-25
 ### Changes
 - Implemented Nimbus and Thinbus client compatibility

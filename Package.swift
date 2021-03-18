@@ -9,10 +9,9 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "1.0.31"),
-        .package(url: "https://github.com/attaswift/BigInt.git", from: "5.0.0"),
+        .package(url: "https://github.com/PerfectlySoft/Perfect-COpenSSL", from: "4.0.2"),
     ],
     targets: [
-        .target(name: "SRP", dependencies: ["Cryptor", "BigInt"], path: "Sources"),
-        .testTarget(name: "SRPTests", dependencies: ["Cryptor", "SRP"]),
+        .target(name: "SRP", dependencies: ["Cryptor", "COpenSSL"], path: "Sources")
     ]
 )

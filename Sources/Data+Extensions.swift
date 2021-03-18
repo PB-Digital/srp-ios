@@ -1,4 +1,5 @@
 import Foundation
+import BigNumber
 
 func ^ (lhs: Data, rhs: Data) -> Data? {
     guard lhs.count == rhs.count else { return nil }
@@ -17,7 +18,7 @@ func + (lhs: Data, rhs: Data) -> Data {
 }
 
 extension Data {
-    public var hexadecimalString : String {
+    public var hex : String {
         var str = ""
         enumerateBytes { buffer, index, stop in
             for byte in buffer {
@@ -29,7 +30,25 @@ extension Data {
 }
 
 extension NSData {
-    public var hexadecimalString : String {
-        return (self as Data).hexadecimalString
+    public var hex : String {
+        return (self as Data).hex
     }
+}
+
+extension StringProtocol {
+    var hexaData: Data { .init(hexa) }
+    var hexaBytes: [UInt8] { .init(hexa) }
+    private var hexa: UnfoldSequence<UInt8, Index> {
+        sequence(state: startIndex) { startIndex in
+            guard startIndex < self.endIndex else { return nil }
+            let endIndex = self.index(startIndex, offsetBy: 2, limitedBy: self.endIndex) ?? self.endIndex
+            defer { startIndex = endIndex }
+            return UInt8(self[startIndex..<endIndex], radix: 16)
+        }
+    }
+}
+
+extension StringProtocol {
+    var data: Data { .init(utf8) }
+    var bytes: [UInt8] { .init(utf8) }
 }
