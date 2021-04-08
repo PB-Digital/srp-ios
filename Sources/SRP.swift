@@ -24,7 +24,7 @@ public func createSaltedVerificationKey(
     salt: Data? = nil,
     group: Group = .N2048,
     algorithm: Digest.Algorithm = .sha1)
-    -> (salt: Data, verificationKey: Data)
+    -> (salt: Data, verificationKeyHex: String)
 {
     let salt = salt ?? Data(try! Random.generate(byteCount: 16))
     
@@ -54,24 +54,15 @@ public func createSaltedVerificationKey(
 ///       generate a salt of 16 bytes.
 ///   - group: `Group` parameters; default is 2048-bits group.
 /// - Returns: salt (s) and verification key (v)
-public func createSaltedVerificationKey(
-    from x: Data,
-    salt: Data? = nil,
-    group: Group = .N2048)
-    -> (salt: Data, verificationKey: Data)
-{
-    return createSaltedVerificationKey(from: BInt(x.hex, radix: 16)!, salt: salt, group: group)
-}
-
 func createSaltedVerificationKey(
     from x: BInt,
     salt: Data? = nil,
     group: Group = .N2048)
-    -> (salt: Data, verificationKey: Data)
+    -> (salt: Data, verificationKeyHex: String)
 {
     let salt = salt ?? Data(try! Random.generate(byteCount: 16))
     let v = calculate_v(group: group, x: x)
-    return (salt, Bignum.init(hex: v.asString(radix: 16)).data)
+    return (salt, v.asString(radix: 16))
 }
 
 func pad(_ data: Data, to size: Int) -> Data {
