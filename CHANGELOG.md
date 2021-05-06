@@ -1,3 +1,11 @@
+## 3.4.0 - 2021-05-6
+### Changes
+- Fixed salt hex conversion
+
+## 3.3.0 - 2021-03-18
+### Changes
+- Updated createSaltedVerificationKey method return type
+
 ## 3.2.1 - 2021-03-18
 ### Changes
 - Fixed stability issues Nimbus and Thinbus client implementation

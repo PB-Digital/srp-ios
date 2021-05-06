@@ -24,9 +24,10 @@ public func createSaltedVerificationKey(
     salt: Data? = nil,
     group: Group = .N2048,
     algorithm: Digest.Algorithm = .sha1)
-    -> (salt: Data, verificationKeyHex: String)
+    -> (salt: String, verificationKeyHex: String)
 {
     let salt = salt ?? Data(try! Random.generate(byteCount: 16))
+    let saltStr = salt.hexEncodedString()
     
     let x: BInt
     
@@ -34,10 +35,10 @@ public func createSaltedVerificationKey(
     case .nimbus:
         x = calculate_x_nimbus(algorithm: algorithm, salt: salt, password: password)
     case .thinbus:
-        x = calculate_x_thinbus(group: group, algorithm: algorithm, salt: salt, username: username, password: password)
+        x = calculate_x_thinbus(group: group, algorithm: algorithm, salt: saltStr, username: username, password: password)
     }
    
-    return createSaltedVerificationKey(from: x, salt: salt, group: group)
+    return createSaltedVerificationKey(from: x, salt: saltStr, group: group)
 }
 
 /// Creates the salted verification key based on a precomputed SRP x value.
@@ -56,13 +57,14 @@ public func createSaltedVerificationKey(
 /// - Returns: salt (s) and verification key (v)
 func createSaltedVerificationKey(
     from x: BInt,
-    salt: Data? = nil,
+    salt: String? = nil,
     group: Group = .N2048)
-    -> (salt: Data, verificationKeyHex: String)
+    -> (salt: String, verificationKeyHex: String)
 {
-    let salt = salt ?? Data(try! Random.generate(byteCount: 16))
+    let saltStr = salt ?? Data(try! Random.generate(byteCount: 16)).hexEncodedString()
+    
     let v = calculate_v(group: group, x: x)
-    return (salt, v.asString(radix: 16))
+    return (saltStr, v.asString(radix: 16))
 }
 
 func pad(_ data: Data, to size: Int) -> Data {
@@ -74,7 +76,7 @@ func pad(_ data: Data, to size: Int) -> Data {
 func calculate_u(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) -> BInt {
     let H = Digest.hasher(algorithm)
     let size = group.getNSize()
-    return BInt(H(pad(A, to: size) + pad(B, to: size)).hex, radix: 16)!
+    return BInt(H(pad(A, to: size) + pad(B, to: size)).hexEncodedString(), radix: 16)!
 }
 
 //u = H(A | B)
@@ -83,7 +85,7 @@ func calculate_u_thinbus(group: Group, algorithm: Digest.Algorithm, A: String, B
     let Adata = A.data(using: .utf8)!
     let Bdata = B.data(using: .utf8)!
     
-    return BInt(H(Adata + Bdata).hex, radix: 16)!
+    return BInt(H(Adata + Bdata).hexEncodedString(), radix: 16)!
 }
 
 //M1 = H(H(N) XOR H(g) | H(I) | s | A | B | K)
@@ -132,11 +134,11 @@ func calculate_k(group: Group, algorithm: Digest.Algorithm) -> BInt {
     let H = Digest.hasher(algorithm)
     let size = group.getNSize()
     return BInt(H(Bignum.init(hex: group.N.asString(radix: 16)).data +
-                    pad(Bignum.init(hex: group.g.asString(radix: 16)).data, to: size)).hex, radix: 16)!
+                    pad(Bignum.init(hex: group.g.asString(radix: 16)).data, to: size)).hexEncodedString(), radix: 16)!
 }
 
 //x = H(s | H(I | ":" | P))
-func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: Data, username: String, password: String) -> BInt {
+func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: String, username: String, password: String) -> BInt {
     let H = Digest.hasher(algorithm)
     
     var hash1 = H("\(username):\(password)".data(using: .utf8)!)
@@ -145,21 +147,21 @@ func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: Data, 
         hash1.remove(at: 0)
     }
     
-    let hash1S = hash1.hex
-    
-    var hash = H("\(salt.hex)\(hash1S)".uppercased().data(using: .utf8)!)
+    let hash1S = hash1.hexEncodedString()
+        
+    var hash = H("\(salt)\(hash1S)".uppercased().data(using: .utf8)!)
     
     if hash[0] == 0 {
         hash.remove(at: 0)
     }
     
-    return BIntMath.mod_exp(BInt(hash.hex, radix: 16)!, BInt(1), group.N)
+    return BIntMath.mod_exp(BInt(hash.hexEncodedString(), radix: 16)!, BInt(1), group.N)
 }
 
 //x = H(s | H(P))
 func calculate_x_nimbus(algorithm: Digest.Algorithm, salt: Data, password: String) -> BInt {
     let H = Digest.hasher(algorithm)
-    return BInt(H(salt + H(password.data(using: .utf8)!)).hex, radix: 16)!
+    return BInt(H(salt + H(password.data(using: .utf8)!)).hexEncodedString(), radix: 16)!
 }
 
 // v = g^x % N

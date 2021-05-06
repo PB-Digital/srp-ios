@@ -16,21 +16,21 @@ func + (lhs: Data, rhs: Data) -> Data {
     return result
 }
 
-extension Data {
-    public var hex : String {
-        var str = ""
-        enumerateBytes { buffer, index, stop in
-            for byte in buffer {
-                str.append(String(format:"%02x",byte))
+extension DataProtocol {
+    func hexEncodedString(uppercase: Bool = false) -> String {
+        return self.map {
+            if $0 < 16 {
+                return "0" + String($0, radix: 16, uppercase: uppercase)
+            } else {
+                return String($0, radix: 16, uppercase: uppercase)
             }
-        }
-        return str
+        }.joined()
     }
 }
 
 extension NSData {
     public var hex : String {
-        return (self as Data).hex
+        return (self as Data).hexEncodedString()
     }
 }
 

@@ -34,7 +34,7 @@ public class Client {
         self.algorithm = algorithm
         
         if let privateKey = privateKey {
-            a = BInt(privateKey.hex, radix: 16)!
+            a = BInt(privateKey.hexEncodedString(), radix: 16)!
             
             // A = g^a % N
             A = BIntMath.mod_exp(group.g, a, group.N)
@@ -106,7 +106,7 @@ public class Client {
         privateKey: Data? = nil)
     {
         self.init(username: username, group: group, algorithm: algorithm, privateKey: privateKey)
-        self.precomputedX = BInt(precomputedX.hex, radix: 16)!
+        self.precomputedX = BInt(precomputedX.hexEncodedString(), radix: 16)!
     }
 
     /// Starts authentication. This method is a no-op.
@@ -166,11 +166,10 @@ public class Client {
             
             x = self.precomputedX ?? calculate_x_thinbus(group: group,
                                                          algorithm: algorithm,
-                                                         salt: salt.hexaData,
+                                                         salt: salt,
                                                          username: username,
                                                          password: password!)
         }
-        
         
         let v = calculate_v(group: group, x: x)
         
@@ -198,7 +197,7 @@ public class Client {
                                    algorithm: algorithm,
                                    A: publicKey,
                                    B: strB.hexaData,
-                                   S: Sdata).hex
+                                   S: Sdata).hexEncodedString()
         case .thinbus:
             M = calculate_M_thinbus(group: group,
                                     algorithm: algorithm,
