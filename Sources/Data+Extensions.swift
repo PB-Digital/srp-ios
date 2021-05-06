@@ -17,7 +17,7 @@ func + (lhs: Data, rhs: Data) -> Data {
 }
 
 extension DataProtocol {
-    func hexEncodedString(uppercase: Bool = false) -> String {
+    public func hexEncodedString(uppercase: Bool = false) -> String {
         return self.map {
             if $0 < 16 {
                 return "0" + String($0, radix: 16, uppercase: uppercase)
