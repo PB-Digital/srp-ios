@@ -435,7 +435,7 @@ public struct BInt:
 	}
     
     public init(randomByteCount count: Int) {
-        self.init(Data(try! Random.generate(byteCount: count)).hex, radix: 16)!
+        self.init(Data(try! Random.generate(byteCount: count)).hexEncodedString(), radix: 16)!
     }
 
 	//
