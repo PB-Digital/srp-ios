@@ -53,8 +53,6 @@ public class Client {
             a = tempa
             A = tempA
         }
-        
-        let publicLength = A.asString(radix: 16).count
     }
 
     /// Initialize the Client SRP party with a password.

@@ -141,21 +141,23 @@ func calculate_k(group: Group, algorithm: Digest.Algorithm) -> BInt {
 func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: String, username: String, password: String) -> BInt {
     let H = Digest.hasher(algorithm)
     
-    var hash1 = H("\(username):\(password)".data(using: .utf8)!)
+    let hash1 = H("\(username):\(password)".data(using: .utf8)!)
     
-    if hash1[0] == 0 {
-        hash1.remove(at: 0)
+    var hash1S = hash1.hexEncodedString()
+    
+    while hash1S.first == "0" {
+        hash1S.remove(at: hash1S.startIndex)
     }
-    
-    let hash1S = hash1.hexEncodedString()
         
-    var hash = H("\(salt)\(hash1S)".uppercased().data(using: .utf8)!)
+    let hash = H("\(salt)\(hash1S)".uppercased().data(using: .utf8)!)
     
-    if hash[0] == 0 {
-        hash.remove(at: 0)
+    var hashS = hash.hexEncodedString()
+    
+    while hashS.first == "0" {
+        hashS.remove(at: hashS.startIndex)
     }
-    
-    return BIntMath.mod_exp(BInt(hash.hexEncodedString(), radix: 16)!, BInt(1), group.N)
+        
+    return BIntMath.mod_exp(BInt(hashS, radix: 16)!, BInt(1), group.N)
 }
 
 //x = H(s | H(P))
