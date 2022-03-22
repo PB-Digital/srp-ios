@@ -1,3 +1,7 @@
+## 3.6.0 - 2022-03-23
+### Changes
+- Made hasher function public
+
 ## 3.4.0 - 2021-05-6
 ### Changes
 - Fixed salt hex conversion
