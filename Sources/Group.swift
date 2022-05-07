@@ -1,3 +1,4 @@
+import BigInt
 /// SRP Group Parameters
 ///
 /// The 1024-, 1536-, and 2048-bit groups are taken from software
@@ -50,8 +51,8 @@ public enum Group {
 
     /// Custom group parameters. See `init(prime:generator:)` for more information.
     public struct CustomGroup {
-        let N: BInt
-        let g: BInt
+        let N: BigUInt
+        let g: BigUInt
     }
 
     /// Custom group parameters. See `init(prime:generator:)` for more information.
@@ -64,22 +65,25 @@ public enum Group {
     ///   - generator: hex-encoded generator
     /// - Returns: nil if one of the parameters chould not be decoded
     public init?(prime: String, generator: String) {
-        self = .custom(CustomGroup(N: BInt(prime, radix: 16)!, g: BInt(generator, radix: 16)!))
+        guard let N = BigUInt(prime, radix: 16), let g = BigUInt(generator, radix: 16) else {
+            return nil
+        }
+        self = .custom(CustomGroup(N: N, g: g))
     }
 
-    var N: BInt {
+    var N: BigUInt {
         switch self {
         case .N256:
-            return BInt("115B8B692E0E045692CF280B436735C77A5A9E8A9E7ED56C965F87DB5B2A2ECE3".lowercased(), radix: 16)!
+            return BigUInt("115B8B692E0E045692CF280B436735C77A5A9E8A9E7ED56C965F87DB5B2A2ECE3".lowercased(), radix: 16)!
         case .N1024:
-            return BInt(
+            return BigUInt(
                 "EEAF0AB9ADB38DD69C33F80AFA8FC5E86072618775FF3C0B9EA2314C" +
                 "9C256576D674DF7496EA81D3383B4813D692C6E0E0D5D8E250B98BE4" +
                 "8E495C1D6089DAD15DC7D7B46154D6B6CE8EF4AD69B15D4982559B29" +
                 "7BCF1885C529F566660E57EC68EDBC3C05726CC02FD4CBF4976EAA9A" +
                 "FD5138FE8376435B9FC61D2FC0EB06E3", radix: 16)!
         case .N1536:
-            return BInt(
+            return BigUInt(
                 "9DEF3CAFB939277AB1F12A8617A47BBBDBA51DF499AC4C80BEEEA961" +
                 "4B19CC4D5F4F5F556E27CBDE51C6A94BE4607A291558903BA0D0F843" +
                 "80B655BB9A22E8DCDF028A7CEC67F0D08134B1C8B97989149B609E0B" +
@@ -88,7 +92,7 @@ public enum Group {
                 "F7CCB7AE837C264AE3A9BEB87F8A2FE9B8B5292E5A021FFF5E91479E" +
                 "8CE7A28C2442C6F315180F93499A234DCF76E3FED135F9BB", radix: 16)!
         case .N2048:
-            return BInt(
+            return BigUInt(
                 "AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC319294" +
                 "3DB56050A37329CBB4A099ED8193E0757767A13DD52312AB4B03310D" +
                 "CD7F48A9DA04FD50E8083969EDB767B0CF6095179A163AB3661A05FB" +
@@ -100,7 +104,7 @@ public enum Group {
                 "94B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F" +
                 "9E4AFF73", radix: 16)!
         case .N3072:
-            return BInt(
+            return BigUInt(
                 "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08" +
                 "8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B" +
                 "302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9" +
@@ -116,7 +120,7 @@ public enum Group {
                 "BBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFC" +
                 "E0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF", radix: 16)!
         case .N4096:
-            return BInt(
+            return BigUInt(
                 "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08" +
                 "8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B" +
                 "302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9" +
@@ -137,7 +141,7 @@ public enum Group {
                 "D5B05AA993B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199" +
                 "FFFFFFFFFFFFFFFF", radix: 16)!
         case .N6144:
-            return BInt(
+            return BigUInt(
                 "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08" +
                 "8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B" +
                 "302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9" +
@@ -167,7 +171,7 @@ public enum Group {
                 "387FE8D76E3C0468043E8F663F4860EE12BF2D5B0B7474D6E694F91E" +
                 "6DCC4024FFFFFFFFFFFFFFFF", radix: 16)!
         case .N8192:
-            return BInt(
+            return BigUInt(
                 "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E08" +
                 "8A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B" +
                 "302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9" +
@@ -209,29 +213,25 @@ public enum Group {
             return custom.N
         }
     }
-    
-    public func getNSize() -> Int {
-        return (N.bitWidth + 7) / 8
-    }
 
-    var g: BInt {
+    var g: BigUInt {
         switch self {
         case .N256:
-            return BInt(2)
+            return BigUInt(2)
         case .N1024:
-            return BInt(2)
+            return BigUInt(2)
         case .N1536:
-            return BInt(2)
+            return BigUInt(2)
         case .N2048:
-            return BInt(2)
+            return BigUInt(2)
         case .N3072:
-            return BInt(5)
+            return BigUInt(5)
         case .N4096:
-            return BInt(5)
+            return BigUInt(5)
         case .N6144:
-            return BInt(5)
+            return BigUInt(5)
         case .N8192:
-            return BInt(19)
+            return BigUInt(19)
         case .custom(let custom):
             return custom.g
         }

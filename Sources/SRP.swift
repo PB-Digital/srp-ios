@@ -1,5 +1,6 @@
 import Foundation
 import Cryptor
+import BigInt
 
 /// Creates the salted verification key based on a user's username and
 /// password. Only the salt and verification key need to be stored on the
@@ -24,21 +25,20 @@ public func createSaltedVerificationKey(
     salt: Data? = nil,
     group: Group = .N2048,
     algorithm: Digest.Algorithm = .sha1)
-    -> (salt: String, verificationKeyHex: String)
+    -> (salt: Data, verificationKey: Data)
 {
-    let salt = salt ?? Data(try! Random.generate(byteCount: 16))
-    let saltStr = salt.hexEncodedString()
+    let salt = salt ?? randomBytes(16)
     
-    let x: BInt
+    let x: BigUInt
     
     switch clientType {
     case .nimbus:
         x = calculate_x_nimbus(algorithm: algorithm, salt: salt, password: password)
     case .thinbus:
-        x = calculate_x_thinbus(group: group, algorithm: algorithm, salt: saltStr, username: username, password: password)
+        x = calculate_x_thinbus(group: group, algorithm: algorithm, salt: salt, username: username, password: password)
     }
    
-    return createSaltedVerificationKey(from: x, salt: saltStr, group: group)
+    return createSaltedVerificationKey(from: x, salt: salt, group: group)
 }
 
 /// Creates the salted verification key based on a precomputed SRP x value.
@@ -55,16 +55,24 @@ public func createSaltedVerificationKey(
 ///       generate a salt of 16 bytes.
 ///   - group: `Group` parameters; default is 2048-bits group.
 /// - Returns: salt (s) and verification key (v)
-func createSaltedVerificationKey(
-    from x: BInt,
-    salt: String? = nil,
+public func createSaltedVerificationKey(
+    from x: Data,
+    salt: Data? = nil,
     group: Group = .N2048)
-    -> (salt: String, verificationKeyHex: String)
+    -> (salt: Data, verificationKey: Data)
 {
-    let saltStr = salt ?? Data(try! Random.generate(byteCount: 16)).hexEncodedString()
-    
+    return createSaltedVerificationKey(from: BigUInt(x), salt: salt, group: group)
+}
+
+func createSaltedVerificationKey(
+    from x: BigUInt,
+    salt: Data? = nil,
+    group: Group = .N2048)
+    -> (salt: Data, verificationKey: Data)
+{
+    let salt = salt ?? randomBytes(16)
     let v = calculate_v(group: group, x: x)
-    return (saltStr, v.asString(radix: 16))
+    return (salt, v.serialize())
 }
 
 func pad(_ data: Data, to size: Int) -> Data {
@@ -73,25 +81,22 @@ func pad(_ data: Data, to size: Int) -> Data {
 }
 
 //u = H(PAD(A) | PAD(B))
-func calculate_u(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) -> BInt {
+func calculate_u(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) -> BigUInt {
     let H = Digest.hasher(algorithm)
-    let size = group.getNSize()
-    return BInt(H(pad(A, to: size) + pad(B, to: size)).hexEncodedString(), radix: 16)!
+    let size = group.N.serialize().count
+    return BigUInt(H(pad(A, to: size) + pad(B, to: size)))
 }
 
 //u = H(A | B)
-func calculate_u_thinbus(group: Group, algorithm: Digest.Algorithm, A: String, B: String) -> BInt {
+func calculate_u_thinbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data) -> BigUInt {
     let H = Digest.hasher(algorithm)
-    let Adata = A.data(using: .utf8)!
-    let Bdata = B.data(using: .utf8)!
-    
-    return BInt(H(Adata + Bdata).hexEncodedString(), radix: 16)!
+    return BigUInt(H(A + B))
 }
 
 //M1 = H(H(N) XOR H(g) | H(I) | s | A | B | K)
 func calculate_M(group: Group, algorithm: Digest.Algorithm, username: String, salt: Data, A: Data, B: Data, K: Data) -> Data {
     let H = Digest.hasher(algorithm)
-    let HN_xor_Hg = (H(Bignum.init(hex: group.N.asString(radix: 16)).data) ^ H(Bignum.init(hex: group.g.asString(radix: 16)).data))!
+    let HN_xor_Hg = (H(group.N.serialize()) ^ H(group.g.serialize()))!
     let HI = H(username.data(using: .utf8)!)
     return H(HN_xor_Hg + HI + salt + A + B + K)
 }
@@ -103,24 +108,9 @@ func calculate_M_nimbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: D
 }
 
 //M1 = H(A | B | S)
-func calculate_M_thinbus(group: Group, algorithm: Digest.Algorithm, A: String, B: String, S: String) -> String {
-    let Abytes = A.bytes
-    let Bbytes = B.bytes
-    let Sbytes = S.bytes
-
-    let digest = Digest(using: algorithm)
-    _ = digest.update(byteArray: Abytes)
-    _ = digest.update(byteArray: Bbytes)
-    _ = digest.update(byteArray: Sbytes)
-    let finalDigest = digest.final()
-    let result = Data(finalDigest)
-
-    let evidence = Bignum(data: result)
-    let evidendeHex = evidence.hex
-
-    return evidendeHex
-//    let H = Digest.hasher(algorithm)
-//    return H((A + B + S).data)
+func calculate_M_thinbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data, S: Data) -> Data {
+    let H = Digest.hasher(algorithm)
+    return H(A + B + S)
 }
 
 //HAMK = H(A | M | K)
@@ -130,43 +120,41 @@ func calculate_HAMK(algorithm: Digest.Algorithm, A: Data, M: Data, K: Data) -> D
 }
 
 //k = H(N | PAD(g))
-func calculate_k(group: Group, algorithm: Digest.Algorithm) -> BInt {
+func calculate_k(group: Group, algorithm: Digest.Algorithm) -> BigUInt {
     let H = Digest.hasher(algorithm)
-    let size = group.getNSize()
-    return BInt(H(Bignum.init(hex: group.N.asString(radix: 16)).data +
-                    pad(Bignum.init(hex: group.g.asString(radix: 16)).data, to: size)).hexEncodedString(), radix: 16)!
+
+    let size = group.N.serialize().count
+    return BigUInt(H(group.N.serialize() + pad(group.g.serialize(), to: size)))
 }
 
 //x = H(s | H(I | ":" | P))
-func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: String, username: String, password: String) -> BInt {
+func calculate_x_thinbus(group: Group, algorithm: Digest.Algorithm, salt: Data, username: String, password: String) -> BigUInt {
     let H = Digest.hasher(algorithm)
     
-    let hash1 = H("\(username):\(password)".data(using: .utf8)!)
+    let saltHexStr = BigUInt(salt).serialize().hexEncodedString()
     
-    var hash1S = hash1.hexEncodedString()
+    let hash1 = H("\(username):\(password)".data(using: .utf8)!).normalize()
+
+    let hash1HexStr = BigUInt(hash1).serialize().hexEncodedString()
+            
+    let hash = H("\(saltHexStr)\(hash1HexStr)".uppercased().data(using: .utf8)!).normalize()
     
-    while hash1S.first == "0" {
-        hash1S.remove(at: hash1S.startIndex)
-    }
-        
-    let hash = H("\(salt)\(hash1S)".uppercased().data(using: .utf8)!)
+    let resultNum = BigUInt(hash)
     
-    var hashS = hash.hexEncodedString()
-    
-    while hashS.first == "0" {
-        hashS.remove(at: hashS.startIndex)
-    }
-        
-    return BIntMath.mod_exp(BInt(hashS, radix: 16)!, BInt(1), group.N)
+    return resultNum % group.N
 }
 
 //x = H(s | H(P))
-func calculate_x_nimbus(algorithm: Digest.Algorithm, salt: Data, password: String) -> BInt {
+func calculate_x_nimbus(algorithm: Digest.Algorithm, salt: Data, password: String) -> BigUInt {
     let H = Digest.hasher(algorithm)
-    return BInt(H(salt + H(password.data(using: .utf8)!)).hexEncodedString(), radix: 16)!
+    return BigUInt(H(salt + H(password.data(using: .utf8)!)).hexEncodedString(), radix: 16)!
 }
 
 // v = g^x % N
-func calculate_v(group: Group, x: BInt) -> BInt {
-    return BIntMath.mod_exp(group.g, x, group.N)
+func calculate_v(group: Group, x: BigUInt) -> BigUInt {
+    return group.g.power(x, modulus: group.N)
+}
+
+func randomBytes(_ count: Int) -> Data {
+    return Data((0..<count).map { _ in UInt8.random(in: 0...255) })
 }

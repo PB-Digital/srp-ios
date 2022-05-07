@@ -4,9 +4,10 @@ import Foundation
 extension Digest {
     static public func hasher(_ algorithm: Algorithm) -> (Data) -> Data {
         return { data in
-            let digest = Digest(using: algorithm)
-            _ = digest.update(data: data)
-            return Data(bytes: digest.final())
+            let result = Digest(using: algorithm)
+                .update(data: data)!
+                .final()
+            return Data(bytes: result)
         }
     }
 }
