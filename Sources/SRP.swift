@@ -109,8 +109,12 @@ func calculate_M_nimbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: D
 
 //M1 = H(A | B | S)
 func calculate_M_thinbus(group: Group, algorithm: Digest.Algorithm, A: Data, B: Data, S: Data) -> Data {
-    let H = Digest.hasher(algorithm)
-    return H(A + B + S)
+    let finalDigest = Digest(using: algorithm)
+        .update(data: A)!
+        .update(data: B)!
+        .update(data: S)!
+        .final()
+    return Data(finalDigest)
 }
 
 //HAMK = H(A | M | K)

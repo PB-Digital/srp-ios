@@ -1,4 +1,4 @@
-## 3.8.0 - 2022-05-07
+## 3.8.1 - 2022-05-07
 ### Changes
 - Added BigInt and Sodium libraries
 - Removed BigNum helper function, OpenSSL library 
