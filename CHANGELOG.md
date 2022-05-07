@@ -1,9 +1,9 @@
-## 3.7.0 - 2022-05-07
+## 3.8.0 - 2022-05-07
 ### Changes
 - Added BigInt and Sodium libraries
 - Removed BigNum helper function, OpenSSL library 
 
-## 3.6.0 - 2022-03-23
+## 3.7.0 - 2022-03-23
 ### Changes
 - Made hasher function public
 
