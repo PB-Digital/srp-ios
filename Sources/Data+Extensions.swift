@@ -51,3 +51,27 @@ extension StringProtocol {
     var data: Data { .init(utf8) }
     var bytes: [UInt8] { .init(utf8) }
 }
+
+extension Data {
+    var bytes: [UInt8] {
+        return [UInt8](self)
+    }
+    
+    func normalize() -> Data {
+        var byteArr = self.bytes
+        
+        if byteArr.isEmpty {
+            return self
+        }
+        
+        while true {
+            if byteArr.first == 0 {
+                byteArr.remove(at: 0)
+            } else {
+                break
+            }
+        }
+        
+        return Data(byteArr)
+    }
+}
