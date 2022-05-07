@@ -28,16 +28,9 @@ extension DataProtocol {
     }
 }
 
-extension NSData {
-    public var hex : String {
-        return (self as Data).hexEncodedString()
-    }
-}
-
 extension StringProtocol {
-    var hexaData: Data { .init(hexa) }
-    var hexaBytes: [UInt8] { .init(hexa) }
-    private var hexa: UnfoldSequence<UInt8, Index> {
+    public var hexData: Data { .init(hex) }
+    private var hex: UnfoldSequence<UInt8, Index> {
         sequence(state: startIndex) { startIndex in
             guard startIndex < self.endIndex else { return nil }
             let endIndex = self.index(startIndex, offsetBy: 2, limitedBy: self.endIndex) ?? self.endIndex
@@ -47,24 +40,15 @@ extension StringProtocol {
     }
 }
 
-extension StringProtocol {
-    var data: Data { .init(utf8) }
-    var bytes: [UInt8] { .init(utf8) }
-}
-
 extension Data {
-    var bytes: [UInt8] {
+    public var bytes: [UInt8] {
         return [UInt8](self)
     }
     
     func normalize() -> Data {
         var byteArr = self.bytes
         
-        if byteArr.isEmpty {
-            return self
-        }
-        
-        while true {
+        while true, !byteArr.isEmpty {
             if byteArr.first == 0 {
                 byteArr.remove(at: 0)
             } else {
