@@ -1,0 +1,26 @@
+name: Build
+
+on:
+  push:
+    paths-ignore:
+      - "**/*.md"
+      - ".gitignore"
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - ".gitignore"
+    branches:
+      - master
+      - develop
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Build
+        uses: actions/checkout@v3
+
+      - run: xcodebuild -scheme SRP -destination 'platform=iOS Simulator,name=iPhone 14 Pro,OS=16.2'
