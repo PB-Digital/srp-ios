@@ -1,15 +1,16 @@
+//
+//  AuthenticationFailure.swift
+//  srp-sample
+//
+//  Created by Karim Karimov on 26.05.24.
+//
+
 import Foundation
 
 /// Possible authentication failure modes.
 public enum AuthenticationFailure: Error {
     /// Security breach: the provided public key is empty (i.e. PK % N is zero).
     case invalidPublicKey
-
-    /// Invalid client state: call `processChallenge` before `verifySession`.
-    case missingChallenge
-
-    /// Failed authentication: the key proof didn't match our own.
-    case keyProofMismatch
 }
 
 extension AuthenticationFailure: CustomStringConvertible {
@@ -20,8 +21,6 @@ extension AuthenticationFailure: CustomStringConvertible {
     public var description: String {
         switch self {
         case .invalidPublicKey: return "security breach - the provided public key is invalid"
-        case .missingChallenge: return "invalid client state - call `processChallenge` before `verifySession`"
-        case .keyProofMismatch: return "failed authentication - the key proof didn't match our own"
         }
     }
 }

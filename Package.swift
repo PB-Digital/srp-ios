@@ -8,10 +8,10 @@ let package = Package(
         .library(name: "SRP", targets: ["SRP"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "1.0.31"),
-        .package(url: "https://github.com/PerfectlySoft/Perfect-COpenSSL", from: "4.0.2"),
+        .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "2.0.2"),
+        .package(url: "https://github.com/attaswift/BigInt.git", from: "5.3.0"),
     ],
     targets: [
-        .target(name: "SRP", dependencies: ["Cryptor", "COpenSSL"], path: "Sources")
+        .target(name: "SRP", dependencies: ["Cryptor", "BigInt"], path: "Sources")
     ]
 )

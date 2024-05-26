@@ -24,7 +24,7 @@ extension DataProtocol {
             } else {
                 return String($0, radix: 16, uppercase: uppercase)
             }
-        }.joined()
+        }.joined().removeLeadingZeroChars()
     }
 }
 
