@@ -18,7 +18,7 @@ public class Client {
 
     public private(set) var isAuthenticated = false
 
-    init(
+    public init(
         username: String,
         password: String,
         group: Group = .N256,
@@ -26,22 +26,22 @@ public class Client {
     ) {
         self.username = username
         self.password = password
-        
+
         self.group = group
         self.algorithm = algorithm
-        
+
         var tempa: BigUInt
         var tempA: BigUInt
-        
+
         repeat {
             let randomBytes = Data(try! Random.generate(byteCount: 32)).hexEncodedString()
-            
+
             tempa = BigUInt(randomBytes.hexaData)
-            
+
             // A = g^a % N
             tempA = group.g.power(tempa, modulus: group.N)
         } while tempA.serialize().hexEncodedString().count % 2 == 1
-        
+
         a = tempa
         A = tempA
     }
@@ -53,9 +53,9 @@ public class Client {
     public func processChallenge(
         salt: String,
         publicKey serverPublicKey: String) throws -> String {
-        
+
         let N = group.N
-        
+
         let strB: String = serverPublicKey.padZeroToEven()
 
         let B = BigUInt(strB.hexaData)
@@ -63,20 +63,20 @@ public class Client {
         guard B % N != 0 else {
             throw AuthenticationFailure.invalidPublicKey
         }
-       
+
         let k = calculate_k()
 
         let u: BigUInt = calculate_u(
             A: publicKey.hexEncodedString().data,
             B: strB.removeLeadingZeroChars().data)
-        
+
         let x: BigUInt = calculate_x(
             salt: salt,
             username: username,
             password: password)
-        
+
         let v = calculate_v(group: group, x: x)
-            
+
         // shared secret
         let S = (B + N - k * v % N).power(a + u * x, modulus: N)
 
@@ -87,20 +87,20 @@ public class Client {
             A: publicKey.hexEncodedString(),
             B: strB.removeLeadingZeroChars(),
             S: Shex)
-            
+
         let MHex = M.serialize().hexEncodedString()
-            
+
         return MHex
     }
-    
+
     public var publicKey: Data {
         return A.serialize()
     }
-    
+
     public var privateKey: Data {
         return a.serialize()
     }
-    
+
     // MARK: - SRP methods
 
     //u = H(A | B)
@@ -132,7 +132,7 @@ public class Client {
         let N = BigUInt(self.group.N.serialize()).serialize()
         let g = BigUInt(self.group.g.serialize()).serialize()
         let padg = self.pad(g, to: size)
-        
+
         return BigUInt(H(N + padg))
     }
 
@@ -143,15 +143,15 @@ public class Client {
         password: String
     ) -> BigUInt {
         let H = Digest.hasher(algorithm)
-        
+
         let credentialsHash = H("\(username):\(password)".data)
                 .hexEncodedString()
                 .removeLeadingZeroChars()
-        
+
         let hash = H("\(salt)\(credentialsHash)".uppercased().data)
                 .hexEncodedString()
                 .removeLeadingZeroChars()
-        
+
         return BigUInt(hash.hexaData) % group.N
     }
 
@@ -166,19 +166,19 @@ public class Client {
         salt: Data
     ) -> (salt: String, verificationKeyHex: String) {
         let saltStr = salt.hexEncodedString()
-        
+
         let x: BigUInt = self.calculate_x(
             salt: saltStr,
             username: username,
             password: password
         )
-        
+
         let v = calculate_v(group: group, x: x)
         let vHex = v.serialize().hexEncodedString()
-        
+
         return (saltStr, vHex)
     }
-    
+
     private func pad(_ data: Data, to size: Int) -> Data {
         precondition(size >= data.count, "Negative padding not possible")
         return Data(count: size - data.count) + data
