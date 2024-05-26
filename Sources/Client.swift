@@ -161,16 +161,14 @@ public class Client {
     }
 
     public func createSaltedVerificationKey(
-        username: String,
-        password: String,
         salt: Data
     ) -> (salt: String, verificationKeyHex: String) {
         let saltStr = salt.hexEncodedString()
 
         let x: BigUInt = self.calculate_x(
             salt: saltStr,
-            username: username,
-            password: password
+            username: self.username,
+            password: self.password
         )
 
         let v = calculate_v(group: group, x: x)
